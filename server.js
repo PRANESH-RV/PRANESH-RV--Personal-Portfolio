@@ -81,12 +81,11 @@ app.post('/api/contact', async (req, res) => {
     });
   }
 });
-
-const portfolioDir = path.join(__dirname, '1');
+const portfolioDir = __dirname;
 app.use(express.static(portfolioDir));
 
 app.get('/', (req, res) => {
-  res.sendFile(path.join(portfolioDir, 'index (1).html'));
+  res.sendFile(path.join(portfolioDir, 'index.html'));
 });
 
 app.listen(PORT, () => {
