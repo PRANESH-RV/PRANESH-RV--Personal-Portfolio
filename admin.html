@@ -1,0 +1,2160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Admin | Project Manager</title>
+
+  <!-- Supabase JavaScript -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --bg: #f6f4f1;
+      --panel: #ffffff;
+      --line: #e9e5df;
+      --ink: #17151c;
+      --muted: #6f6a76;
+      --accent: #7c5cff;
+      --accent-2: #ff6b57;
+      --danger-bg: #ffe9e5;
+      --danger-text: #9c2e20;
+      --shadow: 0 18px 40px rgba(23, 21, 28, 0.08);
+      --radius: 18px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(145deg, #f7f4ef, #f0ece9);
+      color: var(--ink);
+      font-family: Inter, Arial, sans-serif;
+    }
+
+    .wrap {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px 20px 60px;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 28px;
+    }
+
+    .login-box {
+      max-width: 420px;
+      margin: 120px auto 0;
+    }
+
+    h1,
+    h2,
+    h3 {
+      margin-top: 0;
+    }
+
+    input,
+    textarea,
+    select,
+    button {
+      font: inherit;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    input,
+    textarea,
+    select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #fff;
+      margin-bottom: 16px;
+      color: var(--ink);
+    }
+
+    input[type="file"] {
+      padding: 14px;
+      cursor: pointer;
+      background: #faf9f7;
+    }
+
+    textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+
+    .row {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+
+    .inline-actions {
+      display: flex;
+      gap: 12px;
+      margin-top: 18px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      border: none;
+      border-radius: 999px;
+      padding: 12px 18px;
+      cursor: pointer;
+      font-weight: 700;
+      transition: transform 0.2s ease, opacity 0.2s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .btn-primary {
+      background: linear-gradient(
+        120deg,
+        var(--accent),
+        var(--accent-2)
+      );
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: #fff;
+      border: 1px solid var(--line);
+      color: var(--ink);
+    }
+
+    .btn-danger {
+      background: var(--danger-bg);
+      color: var(--danger-text);
+      border: 1px solid #ffcfca;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .topbar h2 {
+      margin: 0;
+      font-size: clamp(26px, 3vw, 36px);
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 10px;
+      min-height: 20px;
+    }
+
+    .error {
+      color: #a03225;
+      font-size: 14px;
+      min-height: 20px;
+      margin-top: 8px;
+    }
+
+    .success {
+      color: #19733d;
+      font-size: 14px;
+      min-height: 20px;
+      margin-top: 8px;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .upload-box {
+      border: 2px dashed #dcd6f5;
+      border-radius: 14px;
+      padding: 20px;
+      background: #faf9ff;
+      margin-bottom: 16px;
+    }
+
+    .upload-info {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 8px;
+      line-height: 1.5;
+    }
+
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .preview-item {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      background: #f5f2ee;
+    }
+
+    .preview-item img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      display: block;
+    }
+
+    .preview-label {
+      padding: 8px;
+      font-size: 11px;
+      color: var(--muted);
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+
+    .cover-badge {
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      background: #17151c;
+      color: white;
+      padding: 5px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .card-list {
+      margin-top: 28px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .project-item {
+      display: grid;
+      grid-template-columns: 140px 1fr auto;
+      gap: 16px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 14px;
+      align-items: center;
+      background: #fff;
+    }
+
+    .project-item img {
+      width: 100%;
+      height: 90px;
+      object-fit: cover;
+      border-radius: 10px;
+      background: #f3efe9;
+    }
+
+    .project-item .meta strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    .project-item .meta small {
+      color: var(--muted);
+      display: block;
+      margin-top: 4px;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    @media (max-width: 720px) {
+
+      .row,
+      .project-item {
+        grid-template-columns: 1fr;
+      }
+
+      .project-item {
+        display: block;
+      }
+
+      .project-item img {
+        margin-bottom: 12px;
+      }
+
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="wrap">
+
+    <!-- LOGIN -->
+
+    <div class="panel login-box" id="loginBox">
+
+      <h1>Admin Portal</h1>
+
+      <label for="adminPassword">
+        Password
+      </label>
+
+      <input
+        id="adminPassword"
+        type="password"
+        placeholder="Enter admin password"
+      />
+
+      <div class="inline-actions">
+
+        <button
+          class="btn btn-primary"
+          id="loginBtn"
+          type="button"
+        >
+          Login
+        </button>
+
+      </div>
+
+      <div
+        class="error"
+        id="loginError"
+      ></div>
+
+    </div>
+
+
+    <!-- ADMIN APP -->
+
+    <div
+      class="hidden"
+      id="adminApp"
+    >
+
+      <div class="topbar">
+
+        <h2>Project Manager</h2>
+
+        <button
+          class="btn btn-secondary"
+          id="logoutBtn"
+          type="button"
+        >
+          Logout
+        </button>
+
+      </div>
+
+
+      <!-- ADD PROJECT -->
+
+      <div class="panel">
+
+        <h3>Add / Edit Project</h3>
+
+        <form
+          id="projectForm"
+          enctype="multipart/form-data"
+        >
+
+          <!-- TITLE + CATEGORY -->
+
+          <div class="row">
+
+            <div>
+
+              <label for="title">
+                Project Title
+              </label>
+
+              <input
+                id="title"
+                type="text"
+                required
+                placeholder="Example: Nexora Studio"
+              />
+
+            </div>
+
+
+            <div>
+
+              <label for="cat">
+                Category
+              </label>
+
+              <select id="cat">
+
+                <option value="Web Development">
+                  Web Development
+                </option>
+
+                <option value="Graphic Design">
+                  Graphic Design
+                </option>
+
+              </select>
+
+            </div>
+
+          </div>
+
+
+          <!-- PROJECT URL -->
+
+          <div
+            id="projectUrlGroup"
+          >
+
+            <label for="url">
+              Project URL
+            </label>
+
+            <input
+              id="url"
+              type="url"
+              placeholder="https://example.com"
+            />
+
+          </div>
+
+
+          <!-- ROLE + YEAR -->
+
+          <div class="row">
+
+            <div>
+
+              <label for="role">
+                Role
+              </label>
+
+              <input
+                id="role"
+                type="text"
+                placeholder="Designer / Developer"
+              />
+
+            </div>
+
+
+            <div>
+
+              <label for="year">
+                Year
+              </label>
+
+              <input
+                id="year"
+                type="text"
+                placeholder="2026"
+              />
+
+            </div>
+
+          </div>
+
+
+          <!-- TOOLS -->
+
+          <div>
+
+            <label for="tools">
+              Tools
+            </label>
+
+            <input
+              id="tools"
+              type="text"
+              placeholder="Figma, Photoshop, HTML, CSS, JavaScript"
+            />
+
+          </div>
+
+
+          <!-- DESCRIPTION -->
+
+          <div>
+
+            <label for="description">
+              Description
+            </label>
+
+            <textarea
+              id="description"
+              placeholder="Short summary of the project"
+            ></textarea>
+
+          </div>
+
+
+          <!-- IMAGE UPLOAD -->
+
+          <div class="upload-box">
+
+            <label for="imageUpload">
+              Upload Project Images
+            </label>
+
+            <input
+              type="file"
+              id="imageUpload"
+              accept="image/*"
+              multiple
+            />
+
+            <div class="upload-info">
+
+              Select one or multiple images.
+
+              <br />
+
+              The first image will automatically become
+              the main cover image of your project.
+
+              <br />
+
+              All selected images will be uploaded
+              to Supabase Storage.
+
+            </div>
+
+
+            <!-- IMAGE PREVIEW -->
+
+            <div
+              class="preview-grid"
+              id="imagePreview"
+            ></div>
+
+          </div>
+
+
+          <!-- EXISTING IMAGES -->
+
+          <div
+            id="existingImagesSection"
+            class="hidden"
+          >
+
+            <label>
+              Existing Project Images
+            </label>
+
+            <div
+              class="preview-grid"
+              id="existingImages"
+            ></div>
+
+          </div>
+
+
+          <!-- BUTTONS -->
+
+          <div class="inline-actions">
+
+            <button
+              class="btn btn-primary"
+              id="saveBtn"
+              type="submit"
+            >
+              Save Project
+            </button>
+
+
+            <button
+              class="btn btn-secondary"
+              id="resetFormBtn"
+              type="button"
+            >
+              Clear
+            </button>
+
+          </div>
+
+
+          <div
+            class="status"
+            id="uploadStatus"
+          ></div>
+
+
+          <div
+            class="success"
+            id="formSuccess"
+          ></div>
+
+
+          <div
+            class="error"
+            id="formError"
+          ></div>
+
+        </form>
+
+      </div>
+
+
+      <!-- SAVED PROJECTS -->
+
+      <div
+        class="panel"
+        style="margin-top: 26px;"
+      >
+
+        <h3>Saved Projects</h3>
+
+        <div
+          class="status"
+          id="projectStatus"
+        >
+          Loading projects...
+        </div>
+
+
+        <div
+          class="card-list"
+          id="projectList"
+        ></div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+
+
+<script>
+
+  /*
+  ============================================
+  SUPABASE CONFIGURATION
+  ============================================
+
+  Replace these two values with your Supabase
+  Project URL and Publishable Key.
+  */
+
+  const SUPABASE_URL = "YOUR_SUPABASE_URL";
+
+  const SUPABASE_PUBLISHABLE_KEY =
+    "YOUR_SUPABASE_PUBLISHABLE_KEY";
+
+
+  /*
+  ============================================
+  STORAGE BUCKET NAME
+  ============================================
+
+  Change this if your Supabase bucket has
+  a different name.
+
+  Example:
+  projects
+  portfolio-images
+  portfolio
+  */
+
+  const SUPABASE_BUCKET = "projects";
+
+
+  /*
+  ============================================
+  CREATE SUPABASE CLIENT
+  ============================================
+  */
+
+  const supabaseClient =
+    supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_PUBLISHABLE_KEY
+    );
+
+
+  /*
+  ============================================
+  APPLICATION STATE
+  ============================================
+  */
+
+  const state = {
+
+    password:
+      localStorage.getItem(
+        "adminPassword"
+      ) || "",
+
+    editingId: null,
+
+    existingImages: []
+
+  };
+
+
+  /*
+  ============================================
+  DOM ELEMENTS
+  ============================================
+  */
+
+  const loginBox =
+    document.getElementById(
+      "loginBox"
+    );
+
+  const adminApp =
+    document.getElementById(
+      "adminApp"
+    );
+
+  const loginError =
+    document.getElementById(
+      "loginError"
+    );
+
+  const formError =
+    document.getElementById(
+      "formError"
+    );
+
+  const formSuccess =
+    document.getElementById(
+      "formSuccess"
+    );
+
+  const uploadStatus =
+    document.getElementById(
+      "uploadStatus"
+    );
+
+  const projectStatus =
+    document.getElementById(
+      "projectStatus"
+    );
+
+  const imageUpload =
+    document.getElementById(
+      "imageUpload"
+    );
+
+  const imagePreview =
+    document.getElementById(
+      "imagePreview"
+    );
+
+  const projectUrlGroup =
+    document.getElementById(
+      "projectUrlGroup"
+    );
+
+
+  /*
+  ============================================
+  CATEGORY CHANGE
+  ============================================
+
+  Web Development:
+  Show Project URL
+
+  Graphic Design:
+  Hide Project URL
+  */
+
+  function updateCategoryFields() {
+
+    const category =
+      document.getElementById(
+        "cat"
+      ).value;
+
+
+    if (
+      category ===
+      "Graphic Design"
+    ) {
+
+      projectUrlGroup.classList.add(
+        "hidden"
+      );
+
+      document.getElementById(
+        "url"
+      ).value = "";
+
+    }
+
+    else {
+
+      projectUrlGroup.classList.remove(
+        "hidden"
+      );
+
+    }
+
+  }
+
+
+  document
+    .getElementById("cat")
+    .addEventListener(
+      "change",
+      updateCategoryFields
+    );
+
+
+
+  /*
+  ============================================
+  LOGIN UI
+  ============================================
+  */
+
+  function setAuthUI() {
+
+    const isLoggedIn =
+      !!state.password;
+
+
+    loginBox.classList.toggle(
+      "hidden",
+      isLoggedIn
+    );
+
+
+    adminApp.classList.toggle(
+      "hidden",
+      !isLoggedIn
+    );
+
+  }
+
+
+
+  /*
+  ============================================
+  IMAGE PREVIEW
+  ============================================
+  */
+
+  imageUpload.addEventListener(
+    "change",
+    function () {
+
+      imagePreview.innerHTML = "";
+
+
+      const files =
+        Array.from(
+          imageUpload.files
+        );
+
+
+      files.forEach(
+        (file, index) => {
+
+          const reader =
+            new FileReader();
+
+
+          reader.onload =
+            function (event) {
+
+              const item =
+                document.createElement(
+                  "div"
+                );
+
+
+              item.className =
+                "preview-item";
+
+
+              item.innerHTML = `
+
+                ${
+                  index === 0
+                    ? `
+                      <div class="cover-badge">
+                        COVER IMAGE
+                      </div>
+                    `
+                    : ""
+                }
+
+                <img
+                  src="${event.target.result}"
+                  alt="${file.name}"
+                >
+
+                <div
+                  class="preview-label"
+                >
+                  ${file.name}
+                </div>
+
+              `;
+
+
+              imagePreview.appendChild(
+                item
+              );
+
+            };
+
+
+          reader.readAsDataURL(
+            file
+          );
+
+        }
+
+      );
+
+    }
+
+  );
+
+
+
+  /*
+  ============================================
+  RENDER SAVED PROJECTS
+  ============================================
+  */
+
+  function renderProjectList(
+    projects
+  ) {
+
+    const list =
+      document.getElementById(
+        "projectList"
+      );
+
+
+    if (!projects.length) {
+
+      list.innerHTML =
+        `
+          <div class="muted">
+            No projects saved yet.
+          </div>
+        `;
+
+
+      projectStatus.textContent =
+        "0 projects";
+
+
+      return;
+
+    }
+
+
+    projectStatus.textContent =
+      `${projects.length} project${
+        projects.length > 1
+          ? "s"
+          : ""
+      }`;
+
+
+    list.innerHTML =
+      projects.map(
+        project => `
+
+        <div
+          class="project-item"
+        >
+
+          <img
+            src="${
+              project.image ||
+              "https://placehold.co/800x520?text=Project"
+            }"
+
+            alt="${
+              project.title
+            }"
+          >
+
+
+          <div class="meta">
+
+            <strong>
+              ${
+                project.title
+              }
+            </strong>
+
+
+            <span class="muted">
+
+              ${
+                project.cat
+              }
+
+            </span>
+
+
+            <small>
+
+              ${
+                project.description ||
+                "No description added."
+              }
+
+            </small>
+
+
+            <small>
+
+              Images:
+              ${
+                Array.isArray(
+                  project.gallery
+                )
+                  ? project.gallery.length
+                  : 0
+              }
+
+            </small>
+
+
+            ${
+              project.url
+                ? `
+                  <small>
+                    URL:
+                    ${project.url}
+                  </small>
+                `
+                : ""
+            }
+
+          </div>
+
+
+          <div
+            class="inline-actions"
+            style="
+              margin:0;
+              justify-content:flex-end;
+            "
+          >
+
+            <button
+              class="btn btn-secondary"
+              type="button"
+              data-edit="${
+                project.id
+              }"
+            >
+
+              Edit
+
+            </button>
+
+
+            <button
+              class="btn btn-danger"
+              type="button"
+              data-delete="${
+                project.id
+              }"
+            >
+
+              Delete
+
+            </button>
+
+          </div>
+
+        </div>
+
+      `
+
+      )
+      .join("");
+
+
+
+    /*
+    DELETE BUTTON
+    */
+
+    document
+      .querySelectorAll(
+        "[data-delete]"
+      )
+      .forEach(
+        button => {
+
+          button.addEventListener(
+            "click",
+            async () => {
+
+              await deleteProject(
+                button.dataset.delete
+              );
+
+            }
+          );
+
+        }
+      );
+
+
+
+    /*
+    EDIT BUTTON
+    */
+
+    document
+      .querySelectorAll(
+        "[data-edit]"
+      )
+      .forEach(
+        button => {
+
+          button.addEventListener(
+            "click",
+            () => {
+
+              const project =
+                projects.find(
+                  item =>
+                    String(
+                      item.id
+                    ) ===
+                    String(
+                      button.dataset.edit
+                    )
+                );
+
+
+              if (!project) return;
+
+
+              state.editingId =
+                project.id;
+
+
+              document
+                .getElementById(
+                  "title"
+                )
+                .value =
+                  project.title || "";
+
+
+              document
+                .getElementById(
+                  "cat"
+                )
+                .value =
+                  project.cat ||
+                  "Web Development";
+
+
+              document
+                .getElementById(
+                  "url"
+                )
+                .value =
+                  project.url || "";
+
+
+              document
+                .getElementById(
+                  "role"
+                )
+                .value =
+                  project.role || "";
+
+
+              document
+                .getElementById(
+                  "year"
+                )
+                .value =
+                  project.year || "";
+
+
+              document
+                .getElementById(
+                  "tools"
+                )
+                .value =
+                  project.tools || "";
+
+
+              document
+                .getElementById(
+                  "description"
+                )
+                .value =
+                  project.description || "";
+
+
+              state.existingImages =
+                Array.isArray(
+                  project.gallery
+                )
+                  ? project.gallery
+                  : [];
+
+
+              /*
+              Ensure cover image exists
+              */
+
+              if (
+                project.image &&
+                !state.existingImages.includes(
+                  project.image
+                )
+              ) {
+
+                state.existingImages.unshift(
+                  project.image
+                );
+
+              }
+
+
+              renderExistingImages();
+
+
+              updateCategoryFields();
+
+
+              window.scrollTo({
+                top: 0,
+                behavior: "smooth"
+              });
+
+            }
+          );
+
+        }
+      );
+
+  }
+
+
+
+  /*
+  ============================================
+  RENDER EXISTING IMAGES
+  ============================================
+  */
+
+  function renderExistingImages() {
+
+    const section =
+      document.getElementById(
+        "existingImagesSection"
+      );
+
+
+    const container =
+      document.getElementById(
+        "existingImages"
+      );
+
+
+    if (
+      !state.existingImages.length
+    ) {
+
+      section.classList.add(
+        "hidden"
+      );
+
+      return;
+
+    }
+
+
+    section.classList.remove(
+      "hidden"
+    );
+
+
+    container.innerHTML =
+      state.existingImages
+        .map(
+          (image, index) => `
+
+          <div class="preview-item">
+
+            ${
+              index === 0
+                ? `
+                  <div class="cover-badge">
+                    CURRENT COVER
+                  </div>
+                `
+                : ""
+            }
+
+            <img
+              src="${image}"
+              alt="Project image"
+            >
+
+          </div>
+
+        `
+        )
+        .join("");
+
+  }
+
+
+
+  /*
+  ============================================
+  FETCH PROJECTS
+  ============================================
+  */
+
+  async function fetchProjects() {
+
+    try {
+
+      projectStatus.textContent =
+        "Loading projects...";
+
+
+      const response =
+        await fetch(
+          "/api/projects"
+        );
+
+
+      const data =
+        await response.json();
+
+
+      if (
+        !response.ok ||
+        !data.success
+      ) {
+
+        throw new Error(
+          data.error ||
+          "Unable to load projects"
+        );
+
+      }
+
+
+      renderProjectList(
+        data.projects || []
+      );
+
+    }
+
+    catch (error) {
+
+      projectStatus.textContent =
+        error.message ||
+        "Unable to load projects";
+
+    }
+
+  }
+
+
+
+  /*
+  ============================================
+  LOGIN
+  ============================================
+  */
+
+  async function loginAdmin() {
+
+    const password =
+      document
+        .getElementById(
+          "adminPassword"
+        )
+        .value
+        .trim();
+
+
+    if (!password) {
+
+      loginError.textContent =
+        "Enter the admin password.";
+
+      return;
+
+    }
+
+
+    try {
+
+      const response =
+        await fetch(
+          "/api/admin/login",
+          {
+
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json"
+            },
+
+            body:
+              JSON.stringify({
+                password
+              })
+
+          }
+        );
+
+
+      const data =
+        await response.json();
+
+
+      if (
+        !response.ok ||
+        !data.success
+      ) {
+
+        throw new Error(
+          data.error ||
+          "Wrong password"
+        );
+
+      }
+
+
+      state.password =
+        password;
+
+
+      localStorage.setItem(
+        "adminPassword",
+        password
+      );
+
+
+      loginError.textContent =
+        "";
+
+
+      setAuthUI();
+
+
+      fetchProjects();
+
+    }
+
+    catch (error) {
+
+      loginError.textContent =
+        error.message ||
+        "Invalid login";
+
+    }
+
+  }
+
+
+
+  /*
+  ============================================
+  UPLOAD IMAGES TO SUPABASE
+  ============================================
+  */
+
+  async function uploadImagesToSupabase(
+    files
+  ) {
+
+    const uploadedUrls = [];
+
+
+    for (
+      let index = 0;
+      index < files.length;
+      index++
+    ) {
+
+      const file =
+        files[index];
+
+
+      uploadStatus.textContent =
+        `Uploading image ${
+          index + 1
+        } of ${
+          files.length
+        }...`;
+
+
+      /*
+      Create unique filename
+      */
+
+      const fileExtension =
+        file.name
+          .split(".")
+          .pop();
+
+
+      const fileName =
+        `${Date.now()}-${
+          Math.random()
+            .toString(36)
+            .substring(2, 10)
+        }.${fileExtension}`;
+
+
+      const filePath =
+        `projects/${fileName}`;
+
+
+      const {
+        error
+      } =
+        await supabaseClient
+          .storage
+          .from(
+            SUPABASE_BUCKET
+          )
+          .upload(
+            filePath,
+            file,
+            {
+              cacheControl:
+                "3600",
+
+              upsert:
+                false
+            }
+          );
+
+
+      if (error) {
+
+        throw new Error(
+          `Upload failed: ${
+            error.message
+          }`
+        );
+
+      }
+
+
+      /*
+      Get public URL
+      */
+
+      const {
+        data
+      } =
+        supabaseClient
+          .storage
+          .from(
+            SUPABASE_BUCKET
+          )
+          .getPublicUrl(
+            filePath
+          );
+
+
+      if (
+        data &&
+        data.publicUrl
+      ) {
+
+        uploadedUrls.push(
+          data.publicUrl
+        );
+
+      }
+
+    }
+
+
+    uploadStatus.textContent =
+      "All images uploaded successfully.";
+
+
+    return uploadedUrls;
+
+  }
+
+
+
+  /*
+  ============================================
+  SAVE PROJECT
+  ============================================
+  */
+
+  async function saveProject(
+    event
+  ) {
+
+    event.preventDefault();
+
+
+    formError.textContent =
+      "";
+
+    formSuccess.textContent =
+      "";
+
+    uploadStatus.textContent =
+      "";
+
+
+    const saveButton =
+      document.getElementById(
+        "saveBtn"
+      );
+
+
+    const category =
+      document
+        .getElementById(
+          "cat"
+        )
+        .value;
+
+
+    const files =
+      Array.from(
+        imageUpload.files
+      );
+
+
+    if (
+      !state.editingId &&
+      files.length === 0
+    ) {
+
+      formError.textContent =
+        "Please upload at least one project image.";
+
+      return;
+
+    }
+
+
+    try {
+
+      saveButton.disabled =
+        true;
+
+
+      saveButton.textContent =
+        "Saving...";
+
+
+      let newImageUrls =
+        [];
+
+
+      /*
+      Upload new files
+      */
+
+      if (
+        files.length > 0
+      ) {
+
+        newImageUrls =
+          await uploadImagesToSupabase(
+            files
+          );
+
+      }
+
+
+      /*
+      Combine existing images
+      with newly uploaded images
+      */
+
+      const allImages =
+        [
+          ...state.existingImages,
+          ...newImageUrls
+        ];
+
+
+      const payload = {
+
+        id:
+          state.editingId ||
+          undefined,
+
+
+        title:
+          document
+            .getElementById(
+              "title"
+            )
+            .value
+            .trim(),
+
+
+        cat:
+          category,
+
+
+        url:
+
+          category ===
+          "Web Development"
+
+            ? document
+                .getElementById(
+                  "url"
+                )
+                .value
+                .trim()
+
+            : "",
+
+
+        role:
+          document
+            .getElementById(
+              "role"
+            )
+            .value
+            .trim(),
+
+
+        year:
+          document
+            .getElementById(
+              "year"
+            )
+            .value
+            .trim(),
+
+
+        tools:
+          document
+            .getElementById(
+              "tools"
+            )
+            .value
+            .trim(),
+
+
+        description:
+          document
+            .getElementById(
+              "description"
+            )
+            .value
+            .trim(),
+
+
+        /*
+        First image = cover
+        */
+
+        image:
+          allImages[0] || "",
+
+
+        /*
+        All images
+        */
+
+        gallery:
+          allImages
+
+      };
+
+
+      if (
+        !payload.title
+      ) {
+
+        throw new Error(
+          "Project title is required."
+        );
+
+      }
+
+
+      /*
+      SAVE PROJECT TO BACKEND
+      */
+
+      const response =
+        await fetch(
+          "/api/projects",
+          {
+
+            method:
+              "POST",
+
+            headers: {
+
+              "Content-Type":
+                "application/json",
+
+              "x-admin-password":
+                state.password
+
+            },
+
+            body:
+              JSON.stringify(
+                payload
+              )
+
+          }
+        );
+
+
+      const data =
+        await response.json();
+
+
+      if (
+        !response.ok ||
+        !data.success
+      ) {
+
+        throw new Error(
+          data.error ||
+          "Unable to save project"
+        );
+
+      }
+
+
+      formSuccess.textContent =
+        "Project saved successfully!";
+
+
+      resetForm();
+
+
+      await fetchProjects();
+
+
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+      });
+
+    }
+
+    catch (error) {
+
+      formError.textContent =
+        error.message ||
+        "Could not save project";
+
+    }
+
+    finally {
+
+      saveButton.disabled =
+        false;
+
+
+      saveButton.textContent =
+        "Save Project";
+
+    }
+
+  }
+
+
+
+  /*
+  ============================================
+  DELETE PROJECT
+  ============================================
+  */
+
+  async function deleteProject(
+    id
+  ) {
+
+    const confirmed =
+      confirm(
+        "Are you sure you want to delete this project?"
+      );
+
+
+    if (!confirmed) {
+
+      return;
+
+    }
+
+
+    try {
+
+      const response =
+        await fetch(
+          `/api/projects/${id}`,
+          {
+
+            method:
+              "DELETE",
+
+            headers: {
+
+              "x-admin-password":
+                state.password
+
+            }
+
+          }
+        );
+
+
+      const data =
+        await response.json();
+
+
+      if (
+        !response.ok ||
+        !data.success
+      ) {
+
+        throw new Error(
+          data.error ||
+          "Unable to delete project"
+        );
+
+      }
+
+
+      await fetchProjects();
+
+    }
+
+    catch (error) {
+
+      formError.textContent =
+        error.message ||
+        "Could not delete project";
+
+    }
+
+  }
+
+
+
+  /*
+  ============================================
+  RESET FORM
+  ============================================
+  */
+
+  function resetForm() {
+
+    state.editingId =
+      null;
+
+
+    state.existingImages =
+      [];
+
+
+    document
+      .getElementById(
+        "projectForm"
+      )
+      .reset();
+
+
+    document
+      .getElementById(
+        "cat"
+      )
+      .value =
+        "Web Development";
+
+
+    imagePreview.innerHTML =
+      "";
+
+
+    document
+      .getElementById(
+        "existingImagesSection"
+      )
+      .classList.add(
+        "hidden"
+      );
+
+
+    formError.textContent =
+      "";
+
+
+    uploadStatus.textContent =
+      "";
+
+
+    updateCategoryFields();
+
+  }
+
+
+
+  /*
+  ============================================
+  EVENT LISTENERS
+  ============================================
+  */
+
+  document
+    .getElementById(
+      "loginBtn"
+    )
+    .addEventListener(
+      "click",
+      loginAdmin
+    );
+
+
+  document
+    .getElementById(
+      "logoutBtn"
+    )
+    .addEventListener(
+      "click",
+      () => {
+
+        state.password =
+          "";
+
+
+        localStorage.removeItem(
+          "adminPassword"
+        );
+
+
+        resetForm();
+
+
+        setAuthUI();
+
+
+        document
+          .getElementById(
+            "adminPassword"
+          )
+          .value =
+            "";
+
+      }
+    );
+
+
+  document
+    .getElementById(
+      "projectForm"
+    )
+    .addEventListener(
+      "submit",
+      saveProject
+    );
+
+
+  document
+    .getElementById(
+      "resetFormBtn"
+    )
+    .addEventListener(
+      "click",
+      resetForm
+    );
+
+
+  document
+    .getElementById(
+      "adminPassword"
+    )
+    .addEventListener(
+      "keydown",
+      event => {
+
+        if (
+          event.key ===
+          "Enter"
+        ) {
+
+          loginAdmin();
+
+        }
+
+      }
+    );
+
+
+
+  /*
+  ============================================
+  INITIALIZE
+  ============================================
+  */
+
+  updateCategoryFields();
+
+
+  setAuthUI();
+
+
+  if (
+    state.password
+  ) {
+
+    fetchProjects();
+
+  }
+
+</script>
+
+</body>
+</html>
